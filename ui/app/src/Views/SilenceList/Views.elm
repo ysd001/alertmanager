@@ -11,6 +11,7 @@ import Utils.Views exposing (buttonLink, checkbox, error, formField, formInput, 
 import Views.FilterBar.Views as FilterBar
 import Views.SilenceList.SilenceView
 import Views.SilenceList.Types exposing (Model, SilenceListMsg(..))
+import Html.Lazy exposing (lazy2, lazy3)
 
 
 view : Model -> Html Msg
@@ -20,18 +21,15 @@ view { filterBar, tab, silences, showConfirmationDialog } =
             [ label [ class "mb-2", for "filter-bar-matcher" ] [ text "Filter" ]
             , Html.map (MsgForFilterBar >> MsgForSilenceList) (FilterBar.view filterBar)
             ]
-        , ul [ class "nav nav-tabs mb-4" ]
-            (List.map (tabView tab) (groupSilencesByState (withDefault [] silences)))
-        , case silences of
-            Success sils ->
-                silencesView showConfirmationDialog (filterSilencesByState tab sils)
-
-            Failure msg ->
-                error msg
-
-            _ ->
-                loading
+        , lazy2 tabsView tab silences
+        , lazy3 silencesView showConfirmationDialog tab silences
         ]
+
+
+tabsView : State -> ApiData (List Silence) -> Html Msg
+tabsView tab silences =
+    List.map (tabView tab) (groupSilencesByState (withDefault [] silences))
+        |> ul [ class "nav nav-tabs mb-4" ]
 
 
 tabView : State -> ( State, List a ) -> Html Msg
@@ -49,20 +47,32 @@ tabView currentState ( state, silences ) =
                 ]
 
 
-silencesView : Maybe SilenceId -> List Silence -> Html Msg
-silencesView showConfirmationDialog silences =
-    if List.isEmpty silences then
-        Utils.Views.error "No silences found"
-    else
-        ul [ class "list-group" ]
-            (List.map
-                (\silence ->
-                    Views.SilenceList.SilenceView.view
-                        (showConfirmationDialog == Just silence.id)
-                        silence
-                )
-                silences
-            )
+silencesView : Maybe SilenceId -> State -> ApiData (List Silence) -> Html Msg
+silencesView showConfirmationDialog state silences =
+    case silences of
+        Success sils ->
+            let
+                silencesInTab =
+                    filterSilencesByState state sils
+            in
+                if List.isEmpty silencesInTab then
+                    Utils.Views.error "No silences found"
+                else
+                    ul [ class "list-group" ]
+                        (List.map
+                            (\silence ->
+                                Views.SilenceList.SilenceView.view
+                                    (showConfirmationDialog == Just silence.id)
+                                    silence
+                            )
+                            silencesInTab
+                        )
+
+        Failure msg ->
+            error msg
+
+        _ ->
+            loading
 
 
 groupSilencesByState : List Silence -> List ( State, List Silence )

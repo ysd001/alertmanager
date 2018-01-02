@@ -5,7 +5,8 @@ import Silences.Api as Api
 import Utils.Filter exposing (Filter, generateQueryString)
 import Utils.Types as Types exposing (ApiData(Failure, Loading, Success), Matchers, Time)
 import Views.FilterBar.Updates as FilterBar
-import Views.SilenceList.Types exposing (Model, SilenceListMsg(..))
+import Views.SilenceList.Types exposing (Model, SilenceTab, SilenceListMsg(..))
+import Silences.Types exposing (Silence, State(..))
 
 
 update : SilenceListMsg -> Model -> Filter -> String -> String -> ( Model, Cmd SilenceListMsg )
@@ -48,6 +49,28 @@ update msg model filter basePath apiUrl =
 
         SetTab tab ->
             ( { model | tab = tab }, Cmd.none )
+
+
+groupSilencesByState : List Silence -> State -> SilenceTab
+groupSilencesByState silences state =
+    let
+        silencesInTab =
+            filterSilencesByState state silences
+    in
+        { tab = state
+        , silences = silencesInTab
+        , count = List.length silencesInTab
+        }
+
+
+states : List State
+states =
+    [ Active, Pending, Expired ]
+
+
+filterSilencesByState : State -> List Silence -> List Silence
+filterSilencesByState state =
+    List.filter (.status >> .state >> (==) state)
 
 
 urlUpdate : Maybe String -> ( SilenceListMsg, Filter )
