@@ -2,6 +2,7 @@ module Views.SilenceList.Updates exposing (update, urlUpdate)
 
 import Navigation
 import Silences.Api as Api
+import Utils.Api as ApiData
 import Utils.Filter exposing (Filter, generateQueryString)
 import Utils.Types as Types exposing (ApiData(Failure, Loading, Success), Matchers, Time)
 import Views.FilterBar.Updates as FilterBar
@@ -12,8 +13,15 @@ import Silences.Types exposing (Silence, State(..))
 update : SilenceListMsg -> Model -> Filter -> String -> String -> ( Model, Cmd SilenceListMsg )
 update msg model filter basePath apiUrl =
     case msg of
-        SilencesFetch sils ->
-            ( { model | silences = sils }, Cmd.none )
+        SilencesFetch fetchedSilences ->
+            ( { model
+                | silences =
+                    ApiData.map
+                        (\silences -> List.map (groupSilencesByState silences) states)
+                        fetchedSilences
+              }
+            , Cmd.none
+            )
 
         FetchSilences ->
             ( { model

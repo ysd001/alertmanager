@@ -1,12 +1,13 @@
 module Views.FilterBar.Views exposing (view)
 
 import Html exposing (Html, Attribute, div, span, input, text, button, i, small)
-import Html.Attributes exposing (value, class, style, disabled, id)
+import Html.Attributes exposing (defaultValue, class, style, disabled, id)
 import Html.Events exposing (onClick, onInput, on, keyCode)
 import Utils.Filter exposing (Matcher)
 import Utils.List
 import Utils.Keyboard exposing (keys, onKeyUp, onKeyDown)
 import Views.FilterBar.Types exposing (Msg(..), Model)
+import Html.Keyed as Keyed
 
 
 keys :
@@ -38,10 +39,10 @@ viewMatcher matcher =
         ]
 
 
-viewMatchers : List Matcher -> List (Html Msg)
+viewMatchers : List Matcher -> List ( String, Html Msg )
 viewMatchers matchers =
     matchers
-        |> List.map viewMatcher
+        |> List.indexedMap (\s v -> ( toString s, viewMatcher v ))
 
 
 view : Model -> Html Msg
@@ -97,10 +98,11 @@ view { matchers, matcherText, backspacePressed } =
         isDisabled =
             maybeMatcher == Nothing
     in
-        div
+        Keyed.node "div"
             [ class "row no-gutters align-items-start" ]
             (viewMatchers matchers
-                ++ [ div
+                ++ [ ( "input"
+                     , div
                         [ class ("col " ++ className)
                         , style [ ( "min-width", "200px" ) ]
                         ]
@@ -108,7 +110,7 @@ view { matchers, matcherText, backspacePressed } =
                             [ input
                                 [ id "filter-bar-matcher"
                                 , class "form-control"
-                                , value matcherText
+                                , defaultValue matcherText
                                 , onKeyDown keyDown
                                 , onKeyUp keyUp
                                 , onInput UpdateMatcherText
@@ -127,6 +129,7 @@ view { matchers, matcherText, backspacePressed } =
                                 [ text exampleMatcher ]
                             ]
                         ]
+                     )
                    ]
             )
 

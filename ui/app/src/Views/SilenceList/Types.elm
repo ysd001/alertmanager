@@ -22,7 +22,7 @@ type alias SilenceTab =
 
 
 type alias Model =
-    { silences : ApiData SilenceTab
+    { silences : ApiData (List SilenceTab)
     , filterBar : FilterBar.Model
     , tab : State
     , showConfirmationDialog : Maybe SilenceId
